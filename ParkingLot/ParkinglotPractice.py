@@ -20,102 +20,104 @@ from enum import Enum
 
 from enum import Enum
 
-
 class SpotType(Enum):
-    Bike = 1
-    Car = 2
-    Truck = 3
+    BIKE = 1
+    CAR = 2
+    TRUCK = 3
+
 
 class Vehicle:
 
-    def __init__(self, make, model, year, spot_type):
+    def __init__(self, make, model, year):
         self.make = make
         self.model = model
         self.year = year
-        self.spot_type = spot_type
-
-
-class Car(Vehicle):
-
-    def __init__(self, make, model, year, spot_type):
-        super().__init__(make, model, year, spot_type)
 
 class Bike(Vehicle):
+    def __init__(self, make, model, year):
+        super().__init__(make, model, year)
+        self.spot_type = SpotType.BIKE
 
-    def __init__(self, make, model, year, spot_type):
-        super().__init__(make, model, year, spot_type)
+class Car(Vehicle):
+    def __init__(self, make, model, year):
+        super().__init__(make, model, year)
+        self.spot_type = SpotType.CAR
 
 class Truck(Vehicle):
-
-    def __init__(self, make, model, year, spot_type):
-        super().__init__(make, model, year, spot_type)
+    def __init__(self, make, model, year):
+        super().__init__(make, model, year)
+        self.spot_type = SpotType.TRUCK
 
 class ParkingSpot:
 
-    def __init__(self, spotType):
-        self.spotType = spotType
+    def __init__(self, spot_type):
+        self.spot_type = spot_type
         self.vehicle = None
 
     def is_available(self):
         return self.vehicle is None
 
     def park(self, vehicle):
-        if self.is_available() and vehicle.spot_type == self.spotType:
+        if self.is_available() and vehicle.spot_type == self.spot_type:
             self.vehicle = vehicle
             return True
         return False
 
     def unpark(self):
         if not self.is_available():
+            vehicle = self.vehicle
             self.vehicle = None
-            return True
-        return False
+            return vehicle
+        return None
+
 
 class Floor:
 
-    def __init__(self, floor_number, spots_config):
+    def __init__(self, floor_number):
         self.floor_number = floor_number
-        self.spots = []
-        for spot_type, count in spots_config.items():
-            for _ in range(count):
-                self.spots.append(ParkingSpot(spot_type))
+        self.spots = {
+            SpotType.BIKE: [ParkingSpot(SpotType.BIKE) for _ in range(10)],
+            SpotType.CAR: [ParkingSpot(SpotType.CAR) for _ in range(20)],
+            SpotType.TRUCK: [ParkingSpot(SpotType.TRUCK) for _ in range(5)],
+        }
 
     def park(self, vehicle):
-        for spot in self.spots:
+        if vehicle.spot_type not in self.spots:
+            return False
+        for spot in self.spots[vehicle.spot_type]:
             if spot.park(vehicle):
                 return True
         return False
 
     def unpark(self, vehicle):
-        for spot in self.spots:
+        if vehicle.spot_type not in self.spots:
+            return False
+        for spot in self.spots[vehicle.spot_type]:
             if spot.vehicle == vehicle:
-                return spot.unpark()
+                spot.unpark()
+                return True
         return False
 
-    def available_spots(self, spot_type=None):
-        if spot_type:
-            return sum(1 for spot in self.spots if spot.is_available() and spot.spotType == spot_type)
-        return sum(1 for spot in self.spots if spot.is_available())
-
-class ParkingLot:
-
-    def __init__(self, num_floors, spots_config):
-        self.floors = {}
-        for i in range(num_floors):
-            self.floors[i] = Floor(i, spots_config)
-
-    def park(self, floor_number, vehicle):
-        if floor_number not in self.floors:
-            return False
-        return self.floors[floor_number].park(vehicle)
-
-    def unpark(self, floor_number, vehicle):
-        if floor_number not in self.floors:
-            return False
-        return self.floors[floor_number].unpark(vehicle)
-
-    def available_spots(self, floor_number, spot_type=None):
-        if floor_number not in self.floors:
+    def available_spots(self, spot_type):
+        if spot_type not in self.spots:
             return 0
-        return self.floors[floor_number].available_spots(spot_type)
+        return sum(1 for spot in self.spots[spot_type] if spot.is_available())
+
+class ParkingLot(ParkingSpot):
+
+    def __init__(self, floors):
+        self.floors = {}
+        for i in range(floors):
+            self.floors[i] = Floor(i)
+
+    def park(self, floor, vehicle):
+        if floor not in self.floors:
+            return False
+        return self.floors[floor].park(vehicle)
+
+    def unpark(self, floor, vehicle):
+        if floor not in self.floors:
+            return False
+        return self.floors[floor].unpark(vehicle)
+
 
