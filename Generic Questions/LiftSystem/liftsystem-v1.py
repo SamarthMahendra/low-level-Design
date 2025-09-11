@@ -65,7 +65,7 @@
 # Users can make hall calls (Up/Down) and car calls (select floor inside elevator).
 
 
-from enum import Enum
+
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
@@ -185,9 +185,10 @@ class ElevatorController:
         self.strategy = strategy
 
 
-class DispatchStrategy:
-    def assign(self, elevators: list, hall_call: HallCall) -> ElevatorCar:
-        raise NotImplementedError
+class DispatchStrategy(ABC):
+    @abstractmethod
+    def assign(self, elevators: List[ElevatorCar], hall_call: HallCall) -> Optional[ElevatorCar]:
+        pass
 
 
 class NearestCarStrategy(DispatchStrategy):
